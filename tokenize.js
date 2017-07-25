@@ -6,6 +6,9 @@ const debug = require('debug')('tokenize')
 // you think?  No good reason not to use an off-the-shelf lex, I suppose.
 // (mostly just feeling burned by js lexer experiences in the past)
 
+// Emacs and I disagree with standard about switch {} indents
+/* eslint-disable indent */
+
 // Doing it like this means getting the string wrong will be caught by JS
 const START = 'START'
 const INWORD = 'INWORD'
@@ -19,7 +22,7 @@ const INNUMDOT = 'INNUMDOT'
 function MyError (message) {
   this.name = 'DataSentenceSyntaxError'
   this.message = message || 'Data Sentence Syntax Error'
-  this.stack = (new Error()).stack
+  this.stack = (new Error(message)).stack
 }
 MyError.prototype = Object.create(Error.prototype)
 MyError.prototype.constructor = MyError
@@ -36,15 +39,20 @@ function tokenize (text, cb) {
 
   const err = () => {
     throw new MyError('Unexpected character ' + JSON.stringify(char) +
-                ' at position ' + pos + ' while in state ' + state)
+                      ' at position ' + pos + ' while in state ' + state)
   }
 
   const endnum = () => {
-    try {
-      token.value = parseFloat(token.text)
-    } catch (e) {
+    // check for things like 1.1.1
+    if (!/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(token.text)) {
+      throw new MyError('Bad number syntax: ' +
+                        JSON.stringify(token.text))
+    }
+    // catch things like overflow
+    token.value = parseFloat(token.text)
+    if (Number.isNaN(token.value) || !Number.isFinite(token.value)) {
       throw new MyError('Number not parseable by JavaScript: ' +
-                  JSON.stringify(token.text))
+                        JSON.stringify(token.text))
     }
     cb(token)
     token = null
@@ -62,76 +70,86 @@ function tokenize (text, cb) {
     debug('  token so far', token)
 
     switch (state) {
-      case START:
-        if (white(char)) {
-          continue
-        }
-        if (digit(char) || char === '-') {
-          state = INNUM
-          token = { type: 'number', start: pos, text: char }
-          continue
-        }
-        if (letter(char)) {
-          state = INWORD
-          token = { type: 'word', start: pos, text: char }
-          continue
-        }
-        if (char === '"') {
-          state = INDQSTR
-          token = { type: 'string', start: pos, text: '' }
-          continue
-        }
-        if (char === ',') {
-          token = { type: 'delim', start: pos, text: char }
-          cb(token)
-          token = null
-          continue
-        }
-        if (char === 'END') continue
-        err()
-        break
+    case START:
+      if (white(char)) {
+        continue
+      }
+      if (digit(char) || char === '-') {
+        state = INNUM
+        token = { type: 'number', start: pos, text: char }
+        continue
+      }
+      if (letter(char)) {
+        state = INWORD
+        token = { type: 'word', start: pos, text: char }
+        continue
+      }
+      if (char === '"') {
+        state = INDQSTR
+        token = { type: 'string', start: pos, text: '' }
+        continue
+      }
+      if (char === ',' || char === '.' /* || char === ';' ||
+          char === '(' || char === ')' ||
+          char === '[' || char === ']' ||
+          char === '{' || char === '}' ||
+          char === '@' || char === '$' || char === '%' ||
+          char === '^' || char === '*' || char === '+'  */
+         ) {
+        token = { type: 'delim', start: pos, text: char }
+        cb(token)
+        token = null
+        continue
+      }
+      if (char === 'END') continue
+      err()
+      break
 
-      case INNUM:
+    case INNUM:
       // we're pretty lax, accepting  123.45.6.7e+3eee-+-+45 as a number
       // knowing parseFloat() will catch this stuff later
-        if (white(char) || char === ',' || char === 'END') {
-          endnum()
-          continue
-        }
-        if (digit(char) ||
+      if (white(char) || char === ',' || char === 'END') {
+        endnum()
+        continue
+      }
+      if (digit(char) ||
           char === 'e' || char === 'E' ||
           char === '+' || char === '-') {
-          token.text += char
-          continue
-        }
-        if (char === '.') {
-          state = INNUMDOT
-        }
-        err()
-        break
+        token.text += char
+        continue
+      }
+      if (char === '.') {
+        state = INNUMDOT
+        token.text += char
+        continue
+      }
+      err()
+      break
 
-      case INNUMDOT:
-        if (white(char)) {
+    case INNUMDOT:
+      if (white(char) || char === 'END') {
         // it was a period at the end of a sentence
-          endnum()
-          continue
-        }
-        if (digit(char)) {
+        token.text = token.text.slice(0, -1)
+        endnum()
+        --pos // go all the way back to the dot
+        continue
+      }
+      if (digit(char)) {
         // it was a decimal point in the middle of a number
-          token.text += char
-          state = INNUM
-          continue
-        }
-        err()
-        break
+        token.text += char
+        state = INNUM
+        continue
+      }
+      err()
+      break
 
-      case INWORD:
-        if (white(char) || char === ',' || char === 'END') {
-          cb(token)
-          token = null
-          --pos
-          state = START
-          continue
+    case INWORD:
+      if (white(char) || char === ',' || char === 'END') {
+        cb(token)
+        token = null
+        --pos
+        state = START
+        continue
         }
         if (letter(char) || digit(char)) {
           token.text += char

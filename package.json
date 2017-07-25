@@ -4,7 +4,8 @@
   "description": "Parse and generate language-as-a-format sentences",
   "main": "index.js",
   "scripts": {
-    "test": "standard && tap --cov test[a-z0-9-_]*.js"
+    "test": "standard && tap --cov test[a-z0-9-_]*.js",
+    "coverage": "standard && tap --cov test[a-z0-9-_]*.js --coverage-report=lcov"
   },
   "repository": {
     "type": "git",
