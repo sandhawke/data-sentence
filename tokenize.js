@@ -6,18 +6,25 @@ const debug = require('debug')('tokenize')
 // you think?  No good reason not to use an off-the-shelf lex, I suppose.
 // (mostly just feeling burned by js lexer experiences in the past)
 
-// I like this style because my editor spots typos.  Could use START =
-// 'START', I suppose.
-const START = 100
-const INWORD = 101
-const INNUM = 102
-const INDQSTR = 103
-const INDQSTRBS = 104
+// Doing it like this means getting the string wrong will be caught by JS
+const START = 'START'
+const INWORD = 'INWORD'
+const INNUM = 'INNUM'
+const INDQSTR = 'INDQSTR'
+const INDQSTRBS = 'INDQSTRBS'
+const INNUMDOT = 'INNUMDOT'
 
-// This is surely premature optimization.  Sorry.
-const ZERO = '0'.charCodeAt(0)
-const NINE = '9'.charCodeAt(0)
+// as per https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error
+// after seening nothing better at https://stackoverflow.com/questions/31089801/extending-error-in-javascript-with-es6-syntax
+function MyError (message) {
+  this.name = 'DataSentenceSyntaxError'
+  this.message = message || 'Data Sentence Syntax Error'
+  this.stack = (new Error()).stack
+}
+MyError.prototype = Object.create(Error.prototype)
+MyError.prototype.constructor = MyError
 
+tokenize.Error = MyError
 
 function tokenize (text, cb) {
   const result = []
@@ -26,112 +33,145 @@ function tokenize (text, cb) {
   let pos = 0
   let token = null
   let char
-  let code 
+
+  const err = () => {
+    throw new MyError('Unexpected character ' + JSON.stringify(char) +
+                ' at position ' + pos + ' while in state ' + state)
+  }
+
+  const endnum = () => {
+    try {
+      token.value = parseFloat(token.text)
+    } catch (e) {
+      throw new MyError('Number not parseable by JavaScript: ' +
+                  JSON.stringify(token.text))
+    }
+    cb(token)
+    token = null
+    --pos
+    state = START
+  }
+
   while (char !== 'END') {
     if (pos + 1 > text.length) {
       char = 'END'
-      code = -1
     } else {
       char = text[pos++]
-      code = char.charCodeAt(0)
     }
     debug('consider char', JSON.stringify(char), 'in state', state)
     debug('  token so far', token)
 
     switch (state) {
+      case START:
+        if (white(char)) {
+          continue
+        }
+        if (digit(char) || char === '-') {
+          state = INNUM
+          token = { type: 'number', start: pos, text: char }
+          continue
+        }
+        if (letter(char)) {
+          state = INWORD
+          token = { type: 'word', start: pos, text: char }
+          continue
+        }
+        if (char === '"') {
+          state = INDQSTR
+          token = { type: 'string', start: pos, text: '' }
+          continue
+        }
+        if (char === ',') {
+          token = { type: 'delim', start: pos, text: char }
+          cb(token)
+          token = null
+          continue
+        }
+        if (char === 'END') continue
+        err()
+        break
 
-    case START:
-      if (white(char)) {
-        continue
-      }
-      if (code >= ZERO && code <= NINE || char === '-') {
-        state = INNUM
-        token = { type: 'number', start: pos, text: char }
-        continue
-      }
-      if (letter(char)) {
-        state = INWORD
-        token = { type: 'word', start: pos, text: char }
-        continue
-      }
-      if (char === '"') {
-        state = INDQSTR
-        token = { type: 'string', start: pos, text: ''} 
-        continue
-      }
-      if (char === ',') {
-        token = { type: 'delim', start: pos, text: char}
-        cb (token)
-        token = null
-        continue
-      }
-      throw Error('invalid char in START: ' + JSON.stringify(char))
-      break
+      case INNUM:
+      // we're pretty lax, accepting  123.45.6.7e+3eee-+-+45 as a number
+      // knowing parseFloat() will catch this stuff later
+        if (white(char) || char === ',' || char === 'END') {
+          endnum()
+          continue
+        }
+        if (digit(char) ||
+          char === 'e' || char === 'E' ||
+          char === '+' || char === '-') {
+          token.text += char
+          continue
+        }
+        if (char === '.') {
+          state = INNUMDOT
+        }
+        err()
+        break
 
-    case INNUM:
-      if (white(char) || char === ',' || char === 'END') {
-        // might still be too long
-        token.value = parseFloat(token.text)
-        cb(token)
-        token = null
-        --pos
-        state = START
-        continue
-      }
-      if (code >= ZERO && code <= NINE) {
+      case INNUMDOT:
+        if (white(char)) {
+        // it was a period at the end of a sentence
+          endnum()
+          continue
+        }
+        if (digit(char)) {
+        // it was a decimal point in the middle of a number
+          token.text += char
+          state = INNUM
+          continue
+        }
+        err()
+        break
+
+      case INWORD:
+        if (white(char) || char === ',' || char === 'END') {
+          cb(token)
+          token = null
+          --pos
+          state = START
+          continue
+        }
+        if (letter(char) || digit(char)) {
+          token.text += char
+          continue
+        }
+        err()
+        break
+
+      case INDQSTR:
+        if (char === '"') {
+          cb(token)
+          token = null
+          state = START
+          continue
+        }
+        if (char === '\\') {
+          state = INDQSTRBS
+          continue
+        }
         token.text += char
-        continue
-      }
-      throw Error('invalid char in INNUM: ' + JSON.stringify(char))
-      break
+        break
 
-    case INWORD:
-      if (white(char) || char === ',' || char === 'END') {
-        cb(token)
-        token = null
-        --pos
-        state = START
-        continue
-      }
-      if (letter(char) || (code >= ZERO && code <= NINE)) {
-        token.text += char
-        continue
-      }
-      throw Error('invalid char in INWORD: ' + JSON.stringify(char))
-      break
-      
-    case INDQSTR:
-      if (char === '"') {
-        cb(token)
-        token = null
-        state = START
-        continue
-      }
-      if (char === '\\') {
-        state = INDQSTRBS
-        continue
-      }
-      token.text += char
-      break
-
-    case INDQSTRBS:
-      if (char === '\\' || char === '"') {
-        token.text += char
-        state = INDQSTR
-        continue
-      }
-      if (char === 'n') {
-        token.text += '\n'
-        state = INDQSTR
-        continue
-      }
-      if (char === 't') {
-        token.text += '\t'
-        state = INDQSTR
-        continue
-      }
-      throw Error('invalid char in INDQSTRBS: ' + JSON.stringify(char))
-      break
+      case INDQSTRBS:
+        if (char === '\\' || char === '"') {
+          token.text += char
+          state = INDQSTR
+          continue
+        }
+        if (char === 'n') {
+          token.text += '\n'
+          state = INDQSTR
+          continue
+        }
+        if (char === 't') {
+          token.text += '\t'
+          state = INDQSTR
+          continue
+        }
+        err()
+        break
     }
   }
   return result
@@ -142,8 +182,11 @@ function white (char) {
 }
 
 function letter (char) {
-  return /[a-z_]/i.test(char)
+  return /^[a-z_]$/i.test(char)
 }
 
-  
+function digit (char) {
+  return /^\d$/.test(char)
+}
+
 module.exports = tokenize

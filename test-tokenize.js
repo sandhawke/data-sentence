@@ -22,7 +22,7 @@ test(t => {
   t.deepEqual(tok('0, 12345'), [
     { start: 1, text: '0', type: 'number', value: 0 },
     { start: 2, text: ',', type: 'delim' },
-    { start: 4, text: '12345', type: 'number', value: 12345 } 
+    { start: 4, text: '12345', type: 'number', value: 12345 }
   ])
   t.end()
 })
@@ -36,10 +36,10 @@ test(t => {
   ])
   t.deepEqual(tok('a bb ccc,dddd'), [
     { start: 1, text: 'a', type: 'word' },
-    { start: 3, text: 'bb', type: 'word'},
+    { start: 3, text: 'bb', type: 'word' },
     { start: 6, text: 'ccc', type: 'word' },
     { start: 9, text: ',', type: 'delim' },
-    { start: 10, text: 'dddd', type: 'word' } 
+    { start: 10, text: 'dddd', type: 'word' }
   ])
   t.end()
 })
@@ -53,14 +53,13 @@ test(t => {
   ])
   t.deepEqual(tok('a bb "ccc",dddd'), [
     { start: 1, text: 'a', type: 'word' },
-    { start: 3, text: 'bb', type: 'word'},
+    { start: 3, text: 'bb', type: 'word' },
     { start: 6, text: 'ccc', type: 'string' },
     { start: 11, text: ',', type: 'delim' },
-    { start: 12, text: 'dddd', type: 'word' } 
+    { start: 12, text: 'dddd', type: 'word' }
   ])
   t.end()
 })
-
 
 test(t => {
   t.deepEqual(tok('""'), [
@@ -82,12 +81,13 @@ test(t => {
 })
 
 test(t => {
+  t.plan(1)
   try {
     tok('"\\a"')
     t.fail()
   } catch (e) {
-    console.log('expected error:', e)
-    t.pass()
+    // console.log('expected error:', e)
+    t.ok(e instanceof tok.Error)
   }
   t.end()
 })
