@@ -1,0 +1,32 @@
+{
+  "name": "data-sentence",
+  "version": "0.0.1",
+  "description": "Parse and generate language-as-a-format sentences",
+  "main": "index.js",
+  "scripts": {
+    "test": "standard && tap --cov test[a-z0-9-_]*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sandhawke/data-sentence.git"
+  },
+  "keywords": [
+    "data",
+    "sentence",
+    "template",
+    "laaf"
+  ],
+  "author": "Sandro Hawke (http://hawke.org/sandro)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sandhawke/data-sentence/issues"
+  },
+  "homepage": "https://github.com/sandhawke/data-sentence#readme",
+  "devDependencies": {
+    "tap": "^10.7.0",
+    "tape": "^4.7.0"
+  },
+  "dependencies": {
+    "debug": "^2.6.8"
+  }
+}
