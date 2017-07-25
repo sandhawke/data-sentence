@@ -5,6 +5,10 @@ const debug = require('debug')('tokenize')
 // One should write a tokenizer by hand at least once a decade, don't
 // you think?  No good reason not to use an off-the-shelf lex, I suppose.
 // (mostly just feeling burned by js lexer experiences in the past)
+//
+// Also, implemented so it could be converted to streaming pretty
+// easily, I think.  pos handling, esp --pos, would have to be
+// slightly different.  But we only back up 2 at most.
 
 // Emacs and I disagree with standard about switch {} indents
 /* eslint-disable indent */
@@ -89,12 +93,18 @@ function tokenize (text, cb) {
         token = { type: 'string', start: pos, text: '' }
         continue
       }
-      if (char === ',' || char === '.' /* || char === ';' ||
+      if (char === '$') {
+        state = INWORD
+        token = { type: 'var', start: pos, text: '' }
+        continue
+      }
+      if (char === ',' || char === '.' || char === ';' ||
+          char === '=' /*   hold off on these until we're sure
           char === '(' || char === ')' ||
           char === '[' || char === ']' ||
           char === '{' || char === '}' ||
-          char === '@' || char === '$' || char === '%' ||
-          char === '^' || char === '*' || char === '+'  */
+          char === '@' || char === '=' || char === '%' ||
+          char === '^' || char === '*' || char === '+' */
          ) {
         token = { type: 'delim', start: pos, text: char }
         cb(token)
@@ -144,7 +154,7 @@ function tokenize (text, cb) {
       break
 
     case INWORD:
-      if (white(char) || char === ',' || char === 'END') {
+      if (white(char) || char === ',' || char === '=' || char === 'END') {
         cb(token)
         token = null
         --pos
