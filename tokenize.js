@@ -10,7 +10,7 @@ const debug = require('debug')('tokenize')
 // easily, I think.  pos handling, esp --pos, would have to be
 // slightly different.  But we only back up 2 at most.
 
-// Emacs and I disagree with standard about switch {} indents
+// Emacs and I disagree with standard about indenting switch {}
 /* eslint-disable indent */
 
 // Doing it like this means getting the string wrong will be caught by JS
@@ -20,6 +20,7 @@ const INNUM = 'INNUM'
 const INDQSTR = 'INDQSTR'
 const INDQSTRBS = 'INDQSTRBS'
 const INNUMDOT = 'INNUMDOT'
+const INBRACKETS = 'INBRACKETS'
 
 // as per https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error
 // after seening nothing better at https://stackoverflow.com/questions/31089801/extending-error-in-javascript-with-es6-syntax
@@ -98,13 +99,18 @@ function tokenize (text, cb) {
         token = { type: 'var', start: pos, text: '' }
         continue
       }
+      if (char === '[') {
+        state = INBRACKETS
+        token = { type: 'brackets', start: pos, text: '' }
+        continue
+      }
       if (char === ',' || char === '.' || char === ';' ||
-          char === '=' /*   hold off on these until we're sure
-          char === '(' || char === ')' ||
-          char === '[' || char === ']' ||
-          char === '{' || char === '}' ||
-          char === '@' || char === '=' || char === '%' ||
-          char === '^' || char === '*' || char === '+' */
+          char === '='
+          /*   hold off on these until we're sure
+               char === '(' || char === ')' ||
+               char === '{' || char === '}' ||
+               char === '@' || char === '=' || char === '%' ||
+               char === '^' || char === '*' || char === '+' */
          ) {
         token = { type: 'delim', start: pos, text: char }
         cb(token)
@@ -136,6 +142,32 @@ function tokenize (text, cb) {
       err()
       break
 
+    case INBRACKETS:
+      // At the moment, everything inside brackets is opaque/allowed
+      // except closing bracket, which cannot be escaped.  This is because
+      // I don't yet know what we want to allow here.  Also, maybe better
+      // left to lexer.
+      if (char === ']') {
+        // for now, I'm just going to say [foo] is the same token as $foo
+        // (because I can't decide which syntax I prefer or how to make them
+        // different)
+        token.type = 'var'
+        token.value = token.text
+
+        cb(token)
+        token = null
+        state = START
+        continue
+      }
+      if (char === 'END') {
+        // maybe give a different error message?
+        // maybe END in quotes should be caught, too?  ******
+        err()
+        continue
+      }
+      token.text += char
+      break
+
     case INNUMDOT:
       if (white(char) || char === 'END') {
         // it was a period at the end of a sentence
@@ -155,51 +187,56 @@ function tokenize (text, cb) {
 
     case INWORD:
       if (white(char) || char === ',' || char === '=' || char === 'END') {
+        if (token.type === 'var') token.value = token.text
         cb(token)
         token = null
         --pos
         state = START
         continue
-        }
-        if (letter(char) || digit(char)) {
-          token.text += char
-          continue
-        }
-        err()
-        break
-
-      case INDQSTR:
-        if (char === '"') {
-          cb(token)
-          token = null
-          state = START
-          continue
-        }
-        if (char === '\\') {
-          state = INDQSTRBS
-          continue
-        }
+      }
+      if (letter(char) || digit(char)) {
         token.text += char
-        break
+        continue
+      }
+      err()
+      break
 
-      case INDQSTRBS:
-        if (char === '\\' || char === '"') {
-          token.text += char
-          state = INDQSTR
-          continue
-        }
-        if (char === 'n') {
-          token.text += '\n'
-          state = INDQSTR
-          continue
-        }
-        if (char === 't') {
-          token.text += '\t'
-          state = INDQSTR
-          continue
-        }
-        err()
-        break
+    case INDQSTR:
+      if (char === '"') {
+        // I'm confused -- why am I building this up in text and value,
+        // if not the have the version with escapes in text and the true
+        // version in value?
+        token.value = token.text
+        cb(token)
+        token = null
+        state = START
+        continue
+      }
+      if (char === '\\') {
+        state = INDQSTRBS
+        continue
+      }
+      token.text += char
+      break
+
+    case INDQSTRBS:
+      if (char === '\\' || char === '"') {
+        token.text += char
+        state = INDQSTR
+        continue
+      }
+      if (char === 'n') {
+        token.text += '\n'
+        state = INDQSTR
+        continue
+      }
+      if (char === 't') {
+        token.text += '\t'
+        state = INDQSTR
+        continue
+      }
+      err()
+      break
     }
   }
   return result
@@ -210,7 +247,7 @@ function white (char) {
 }
 
 function letter (char) {
-  return /^[a-z_]$/i.test(char)
+  return /^[a-z_']$/i.test(char)      // NOTE apostrope (it's, person's, ...)
 }
 
 function digit (char) {

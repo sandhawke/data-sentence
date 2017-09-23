@@ -1,6 +1,6 @@
 'use strict'
 
-const debug = require('debug')('match')
+const debug = require('debug')('data_sentence_match')
 
 // Emacs and I disagree with standard about switch {} indents
 /* eslint-disable indent */
