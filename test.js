@@ -1,7 +1,7 @@
 'use strict'
 
 const test = require('tape')
-const DS = require('.')
+const datasent = require('.')
 
 const schema = {
   people_names: {
@@ -18,7 +18,7 @@ const schema = {
 }
 
 test(t => {
-  const ds = new DS(schema)
+  const ds = new datasent.Translator(schema)
   const obj = { given: 'Dr', family: 'Who' }
   const sent = ds.stringify(obj)
   t.equal(sent,

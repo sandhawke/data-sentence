@@ -4,7 +4,7 @@ const parse = require('./parse')
 const serialize = require('./serialize')
 const splitter = require('./split')
 
-class DataSentenceTranslator {
+class Translator {
   constructor (schema) {
     this.schema = schema
   }
@@ -23,4 +23,4 @@ class DataSentenceTranslator {
   }
 }
 
-module.exports = DataSentenceTranslator
+module.exports.Translator = Translator
