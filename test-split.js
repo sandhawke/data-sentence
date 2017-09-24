@@ -17,7 +17,7 @@ test(t => {
 
 test(t => {
   try {
-    const o = splitter.split('goodbye', 5)
+    splitter.split('goodbye', 5)
   } catch (e) {
     // no room
     t.end()
@@ -31,5 +31,3 @@ test.only(t => {
   ])
   t.end()
 })
-
-

@@ -18,30 +18,30 @@ function serialize (obj, schema) {
     if (!def) continue
 
     let prevType = null
-    
+
     for (const tok of tokenize(def)) {  // cache it tokenized...?
       switch (tok.type) {
-      case 'delim':
-        out.push(tok.text)
-        break
-      case 'number':
-      case 'word':
-        if (prevType !== null) out.push(' ')
-        out.push(tok.text)
-        break
-      case 'string':
-        if (prevType !== null) out.push(' ')
+        case 'delim':
+          out.push(tok.text)
+          break
+        case 'number':
+        case 'word':
+          if (prevType !== null) out.push(' ')
+          out.push(tok.text)
+          break
+        case 'string':
+          if (prevType !== null) out.push(' ')
         // when re-parsing these will be interesting
-        out.push(JSON.stringify(tok.text))
-        break
-      case 'var':
-        if (prevType !== null) out.push(' ')
-        const value = obj[tok.text]
-        if (value === undefined) continue
-        out.push(serValue(value))
-        break
-      default:
-        throw Error('unknown token type: ' + tok.type)
+          out.push(JSON.stringify(tok.text))
+          break
+        case 'var':
+          if (prevType !== null) out.push(' ')
+          const value = obj[tok.text]
+          if (value === undefined) continue
+          out.push(serValue(value))
+          break
+        default:
+          throw Error('unknown token type: ' + tok.type)
       }
       prevType = tok.type
     }

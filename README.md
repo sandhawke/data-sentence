@@ -11,7 +11,7 @@ Advantages:
 - arbitrary semantic precision (see below)
 - serialization is self-documenting, like XML and JSON, but much more so
 
-Disadvantes:
+Disadvantages:
 - serialization is verbose (but gzip can take care of much of that)
 - you need code to read and write the data (but now you have this library)
 - you need to write a schema (but maybe that'll improve your code, like

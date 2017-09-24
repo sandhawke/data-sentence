@@ -1,29 +1,42 @@
 const DS = require('data-sentence')
 
 const schema = {
-  books: {
+  todo: {
     defs: [
-
-      '[id] herein refers to a conceptual entity, the book titled [title], credited to a single author, referred to herein as [author], first published in the year [year]'
-
-      // 'A book exists, with title [title], credited to a single author, referred to here as [author], first published in the year [year]'
-
-    ]
+      'Here is an item for my to-do list, description: [description]'
+    ],
+    filter: {
+      isToDoItem: true,
+      description: { exists: true }
+    }
   },
-  authors: {
-    defs: []
-  }
+  done: {
+    defs: [
+      'The to-do list item described at [_selfLink] has now been done'
+    ],
+    filter: {
+      isToDoItem: true,
+      done: true
+    }
+  } /*,
+  doneReply: {
+    defs: [
+      'This item has now been done'
+    ],
+    subjectOfInReplyTo: '_self',
+    filter: {
+      isToDoItem: true,
+      done: true
+    }
+  } */
 }
 
-const jg = { name: 'John Green', id: 'item_122' }
-const book1 = { id: 'item_123',
-  title: 'The Fault in our Stars',
-  author: jg,
-  year: 2012 }
+const i1 = { isToDoItem: true,
+  description: 'Create a simple app to demonstrate Data Sentences and SocDB' }
 
 const ds = new DS(schema)
 
-const out = ds.stringifySplit(book1, 60)
+const out = ds.stringifySplit(i1, 60)
 console.log(out)
 /* =>
 [ '[part 1] "item_123" herein refers to a conceptual entity,',

@@ -105,7 +105,7 @@ function tokenize (text, cb) {
         continue
       }
       if (char === ',' || char === '.' || char === ';' ||
-          char === '='
+          char === '=' || char === ':'
           /*   hold off on these until we're sure
                char === '(' || char === ')' ||
                char === '{' || char === '}' ||
@@ -186,7 +186,8 @@ function tokenize (text, cb) {
       break
 
     case INWORD:
-      if (white(char) || char === ',' || char === '=' || char === 'END') {
+      if (white(char) || char === ',' || char === '=' ||
+          char === 'END' || char === ':') {
         if (token.type === 'var') token.value = token.text
         cb(token)
         token = null
@@ -247,7 +248,7 @@ function white (char) {
 }
 
 function letter (char) {
-  return /^[a-z_']$/i.test(char)      // NOTE apostrope (it's, person's, ...)
+  return /^[a-z_'-]$/i.test(char)      // NOTE apostrope (it's, person's, ...)
 }
 
 function digit (char) {
