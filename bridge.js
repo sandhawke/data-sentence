@@ -2,7 +2,7 @@
 
 const debug = require('debug')('data_sentence_live')
 
-class Live {
+class Bridge {
   constructor (trans, msgDB, objDB) {
     this.trans = trans
     this.msgDB = msgDB
@@ -16,11 +16,11 @@ class Live {
         text: { required: true, type: 'string' }
         // inReplyTo: { type: 'object' },   // ref?
         // creator: cccc   User Object Reference
-        // date: dddd 
+        // date: dddd
       }
     })
 
-    // should ask for reply, with 
+    // should ask for reply, with
     //  - replayAndListen(...)
     //  - onSince(0, ...
     this.msgView.on('appear', this.newMessage.bind(this))
@@ -37,7 +37,7 @@ class Live {
       return
     }
     // TBD defragment...    gather up all the fragments before handling
-    
+
     const obj = this.trans.parse(msg.text)
     if (obj) {
       obj.__source = msg
@@ -77,18 +77,17 @@ class Live {
       debug('added msg %o', msg)
     }
   }
-  
 
   objectDelta (obj, delta) {
     // buffer up some deltas...   wait for a 'stable' or a 'tick', I guess
-    
+
   }
 
   flushDeltas () {
     // for all the objects for which we've been storing up deltas, generate
     // sentences
-    
+
   }
 }
 
-module.exports = Live
+module.exports = Bridge

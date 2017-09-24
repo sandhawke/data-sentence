@@ -5,8 +5,7 @@
   deltas include object reference --- BEFORE vs AFTER vs ugh.  We
   don't really need BEFORE, just after.
 
-
-  deltas = [   
+  deltas = [
      { target || targetLocalID
        who
        when
@@ -24,14 +23,15 @@
 */
 
 function go (deltas, schema) {
-  
+
 }
 
 /*
   - find a set of views that conveys all the properties
   - pick the 'best' one, which is ... the smallest set?
- */
+ /
 function stringifyProperties (obj, properties, schema) {
 }
+*/
 
 module.exports = go

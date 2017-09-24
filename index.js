@@ -3,7 +3,7 @@
 const parse = require('./parse')
 const serialize = require('./serialize')
 const splitter = require('./split')
-const Live = require('./live')
+const Bridge = require('./bridge')
 
 class Translator {
   constructor (schema) {
@@ -25,8 +25,8 @@ class Translator {
     return splitter.split(this.stringify(obj), max)
   }
 
-  startLive (messageDB, objectsDB) {
-    return new Live(this, messageDB, objectsDB)
+  bridge (messageDB, objectsDB) {
+    return new Bridge(this, messageDB, objectsDB)
   }
 }
 
