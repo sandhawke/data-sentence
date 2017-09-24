@@ -1,3 +1,5 @@
+## In Progress / Experimental
+
 Convert back and forth between JavaScript data objects and
 natural-language sentences with the same intended meaning, using
 templates you provide.
