@@ -23,7 +23,9 @@ test('simple obj to text', t => {
   }
   const trans = new ds.Translator(schema)
   trans.bridge(mdb, odb)
+  debug('*********************** Adding')
   odb.add({x: 1, y: 2})
+  debug('*********************** Done Adding')
   for (let m of mdb.items()) {
     t.equal(m.text, 'testing 1 and 2')
     t.end()
@@ -63,6 +65,37 @@ test('obj to text to obj', t => {
     debug('o: %o', o)
     t.equal(o.xx, 1)
     t.equal(o.yy, 2)
+    t.end()
+  }
+})
+
+test('shredding; GRADUAL obj to text', t => {
+  const mdb = new datapages.DB({localMode: true})
+  const odb = new datapages.DB({localMode: true})
+  odb.on('appear', page => {
+    debug('odb appear', page)
+  })
+  odb.on('change', (page, delta) => {
+    debug('odb change', page, delta)
+  })
+  const schema = {
+    a: {
+      defs: [
+        'testing [x] and [y]'
+      ]
+    }
+  }
+  const trans = new ds.Translator(schema)
+  trans.bridge(mdb, odb)
+  debug('*********************** Adding')
+  const obj = {}
+  odb.add(obj)
+  odb.overlay(obj, {x: 1})
+  debug('*********************** setting y')
+  odb.overlay(obj, {y: 2})
+  debug('*********************** Done Adding')
+  for (let m of mdb.items()) {
+    t.equal(m.text, 'testing 1 and 2')
     t.end()
   }
 })

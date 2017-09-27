@@ -1,13 +1,13 @@
 'use strict'
 
-const debug = require('debug')('data_sentence_live')
+const debug = require('debug')('data_sentence_bridge')
 
 class Bridge {
   constructor (trans, msgDB, objDB) {
     this.trans = trans
     this.msgDB = msgDB
     this.objDB = objDB
-    this.seen = new WeakMap()
+    this.mapsTo = new WeakMap()
 
     // let msgDB just be the view we want.  if we had better nested
     // views, we wouldn't need this.
@@ -38,17 +38,18 @@ class Bridge {
 
   newMessage (msg) {
     debug('incoming message %o', msg)
-    if (this.seen.get(msg)) {
-      debug('msg seen, so skip it')
+    if (this.mapsTo.get(msg)) {
+      debug('msg already processed, so skip it')
       return
     }
     // TBD defragment...    gather up all the fragments before handling
 
+    debug('its new, parse it')
     const obj = this.trans.parse(msg.text)
     if (obj) {
       obj.__source = msg
-      this.seen.set(obj, true)
-      this.seen.set(msg, true)
+      this.mapsTo.set(obj, msg)
+      this.mapsTo.set(msg, obj)
       this.objDB.add(obj)
       debug('added obj %o', obj)
     } else {
@@ -58,30 +59,24 @@ class Bridge {
 
   newObject (obj) {
     debug('incoming object %o', obj)
-    if (this.seen.get(obj)) {
-      debug('msg seen, so skip it')
+    if (this.mapsTo.get(obj)) {
+      debug('obj seen, so skip it')
       return
     }
 
-    // this is only useful when the object comes in with all its
-    // properties.  If it came over the network, it would have been
-    // shredded and we'll need to buffer up deltas, etc.
-
-    let prev = null
-    for (const t of this.trans.stringifySplit(obj)) {
-      const msg = {
-        isMessage: true,
-        text: t
-      }
-      if (prev) msg.inReplyTo = prev
-      prev = msg
-
-      this.seen.set(obj, true)
-      this.seen.set(msg, true)
-
-      this.msgDB.add(msg)
-      debug('added msg %o', msg)
+    const t = this.trans.stringify(obj)
+    debug('got stringified section %j', t)
+    const msg = {
+      isMessage: true,
+      text: t
     }
+
+    this.mapsTo.set(obj, msg)
+    this.mapsTo.set(msg, obj)
+
+    debug('marked as seen, so adding them to msgDB should do little')
+    this.msgDB.add(msg)
+    debug('added msg %o', msg)
   }
 
   objectDelta (obj, delta) {
@@ -89,6 +84,21 @@ class Bridge {
     // buffer up some deltas...   wait for a 'stable' or a 'tick', I guess
     //
     // OR just try again
+    //
+    // if we've already mapped this object, then delete the message?
+    const msg = this.mapsTo.get(obj)
+    if (msg) {
+      const t = this.trans.stringify(obj)
+      if (t === msg.text) {
+        debug('changed object stringifies the same; nothing to change')
+        return
+      }
+
+      debug('overlaying new text for msg, %j', t)
+      this.msgDB.overlay(msg, {text: t})
+      return
+    }
+    debug('we havent managed to construct a msg for this obj, so try now')
     this.newObject(obj)
   }
 

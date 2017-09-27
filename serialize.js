@@ -42,8 +42,11 @@ function serialize (obj, schema) {
         case 'var':
           if (prevType !== null) out.push(' ')
           const value = obj[tok.text]
-          if (value === undefined) continue
-          out.push(serValue(value))
+          if (value === undefined) {
+            out.push('NULL')  // or reject it?
+          } else {
+            out.push(serValue(value))
+          }
           break
         default:
           throw Error('unknown token type: ' + tok.type)
