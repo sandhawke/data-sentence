@@ -26,6 +26,7 @@ class Translator {
   }
 
   bridge (messageDB, objectsDB) {
+    if (!this.schema) this.schema = objectsDB.views
     return new Bridge(this, messageDB, objectsDB)
   }
 }

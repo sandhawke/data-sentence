@@ -2,6 +2,7 @@
 
 const tokenize = require('./tokenize')
 const match = require('./match')
+const filter = require('datapages/filter')
 const debug = require('debug')('data_sentence_parse')
 
 // Inefficient, but simple and flexible brute force version.  Lots of
@@ -16,6 +17,7 @@ function parse (text, schema) {
     for (const def of view.defs) {
       const deftok = tokenize(def)
       const m = match(deftok, msg)
+      filter.filterForView(view).setFixed(m)
       debug('solved', m)
       if (m) return m
       // doesn't even warn if there's more than one!

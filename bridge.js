@@ -9,16 +9,22 @@ class Bridge {
     this.objDB = objDB
     this.seen = new WeakMap()
 
-    this.msgView = this.msgDB.view({
-      name: 'messages',
-      filter: {
-        isMessage: true,
-        text: { required: true, type: 'string' }
-        // inReplyTo: { type: 'object' },   // ref?
-        // creator: cccc   User Object Reference
-        // date: dddd
-      }
-    })
+    // let msgDB just be the view we want.  if we had better nested
+    // views, we wouldn't need this.
+    if (this.msgDB.filter && this.msgDB.filter.text) {
+      this.msgView = this.msgDB
+    } else {
+      this.msgView = this.msgDB.view({
+        name: 'messages',
+        filter: {
+          isMessage: true,
+          text: { required: true, type: 'string' }
+          // inReplyTo: { type: 'object' },   // ref?
+          // creator: cccc   User Object Reference
+          // date: dddd
+        }
+      })
+    }
 
     // should ask for reply, with
     //  - replayAndListen(...)
@@ -79,8 +85,11 @@ class Bridge {
   }
 
   objectDelta (obj, delta) {
+    debug('incoming delta, treating like a new object for now')
     // buffer up some deltas...   wait for a 'stable' or a 'tick', I guess
-
+    //
+    // OR just try again
+    this.newObject(obj)
   }
 
   flushDeltas () {

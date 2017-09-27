@@ -1,6 +1,7 @@
 'use strict'
 
 const tokenize = require('./tokenize')
+const filter = require('datapages/filter')
 const debug = require('debug')('data_sentence_serialize')
 
 // consider making this a generator for each serialization, instead of
@@ -12,7 +13,11 @@ function serialize (obj, schema) {
   let found = false
   for (const viewName of Object.keys(schema)) {
     const view = schema[viewName]
-    // if (!view.wouldAccept(obj)) return
+
+    if (!filter.filterForView(view).passes(obj)) {
+      debug('rejected by filter %j', view.name)
+      continue
+    }
 
     let def = view.defs[0]
     if (!def) continue
