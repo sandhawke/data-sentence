@@ -31,7 +31,7 @@ See examples directory
 The essential insight behind this approach is that conventional
 well-defined XML, JSON, and RDF formats often have each component
 (each property, element, attribute, class, token value, etc) defined
-in one normative sentence or paraphrase (each) in a specification
+in one normative sentence or paragraph (per term) in a specification
 document.  There are often associated examples and background and
 discussion, but the key is a small bit of text per term.  If
 everything is perfectly in sync, that works pretty well.
