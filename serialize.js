@@ -8,16 +8,20 @@ const debug = require('debug')('data_sentence_serialize')
 // on the first [in nondeterministic order!], like it is now.
 
 function serialize (obj, schema) {
-  debug('trying %o', obj)
+  debug('serialize(%o, ...)', obj)
   const out = []
   let found = false
   for (const viewName of Object.keys(schema)) {
     const view = schema[viewName]
+    debug('trying view %s', viewName)
+
+    if (!view.filter) view.filter = {}  // doesn't defaut any more?
 
     if (!filter.filterForView(view).passes(obj)) {
       debug('rejected by filter %j', view.name)
       continue
     }
+    debug('accepted by filter for this view')
 
     let def = view.defs[0]
     if (!def) continue
@@ -57,7 +61,8 @@ function serialize (obj, schema) {
     if (found) throw Error('multiple serializations possible')
     found = true
   }
-  debug('returning', out)
+  if (!found) return undefined
+  debug('returning %o', out)
   return out.join('')
 }
 

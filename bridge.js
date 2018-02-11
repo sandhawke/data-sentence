@@ -50,7 +50,7 @@ class Bridge {
       obj.__source = msg
       this.mapsTo.set(obj, msg)
       this.mapsTo.set(msg, obj)
-      this.objDB.add(obj)
+      this.objDB.create(obj)
       debug('added obj %o', obj)
     } else {
       debug('no schema match for message %j', msg.text)
@@ -65,18 +65,22 @@ class Bridge {
     }
 
     const t = this.trans.stringify(obj)
-    debug('got stringified section %j', t)
-    const msg = {
-      isMessage: true,
-      text: t
+    if (t) {
+      debug('got stringified section %j', t)
+      const msg = {
+        isMessage: true,
+        text: t
+      }
+
+      this.mapsTo.set(obj, msg)
+      this.mapsTo.set(msg, obj)
+
+      debug('marked as seen, so adding them to msgDB should do little')
+      this.msgDB.create(msg)
+      debug('added msg %o', msg)
+    } else {
+      debug('no stringification for %o', obj)
     }
-
-    this.mapsTo.set(obj, msg)
-    this.mapsTo.set(msg, obj)
-
-    debug('marked as seen, so adding them to msgDB should do little')
-    this.msgDB.add(msg)
-    debug('added msg %o', msg)
   }
 
   objectDelta (obj, delta) {
@@ -90,12 +94,13 @@ class Bridge {
     if (msg) {
       const t = this.trans.stringify(obj)
       if (t === msg.text) {
-        debug('changed object stringifies the same; nothing to change')
+        debug('changed object %j stringifies the same; nothing to change', obj)
         return
       }
 
       debug('overlaying new text for msg, %j', t)
-      this.msgDB.overlay(msg, {text: t})
+      // this.msgDB.overlay(msg, {text: t})
+      this.msgDB.setProperty(msg, 'text', t)
       return
     }
     debug('we havent managed to construct a msg for this obj, so try now')

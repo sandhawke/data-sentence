@@ -1,6 +1,7 @@
 'use strict'
 
-const debug = require('debug')('tokenize')
+// const debug = require('debug')('tokenize')
+const debug = () => true  // too verbose!
 
 // One should write a tokenizer by hand at least once a decade, don't
 // you think?  No good reason not to use an off-the-shelf lex, I suppose.

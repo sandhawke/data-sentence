@@ -48,8 +48,21 @@ With Data Sentences, the documentation sentences, the `defs` in the
 schema, are actually used as the data format.  If you change one
 character, it's a different, incompatible format.  But if you want it
 to be the same, you just keep it as one of the older defs.  Basically,
-we've taken out the level of indirection that provided by the
-vocabulary specifications in most data formats, because it seems like
-that indirection ofter causes more problems than it solves.
+we've taken out the level of indirection provided by the vocabulary
+specifications in most data formats, because it seems like that
+indirection ofter causes more problems than it solves.
 
 (A tutorial would be nice, at some point.)
+
+For more thinking and discussion behind this concept, see our earlier
+work in this direction, [The 'mics' Micro-Specification
+Vocabulary](https://www.w3.org/ns/mics) and
+[GrowJSON](https://decentralyze.com/2014/06/30/growjson/)
+
+## Credits and Disclaimer
+
+This material is based upon work supported by the National Science
+Foundation under Grant No. 1313789.  Any opinions, findings, and
+conclusions or recommendations expressed in this material are those of
+the author(s) and do not necessarily reflect the views of the National
+Science Foundation.

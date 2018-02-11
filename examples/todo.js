@@ -1,4 +1,4 @@
-const DS = require('data-sentence')
+const DS = require('data-sentence').Translator
 
 const schema = {
   todo: {

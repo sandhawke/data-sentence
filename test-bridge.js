@@ -6,8 +6,8 @@ const datapages = require('datapages')
 const debug = require('debug')('data_sentence_test_live')
 
 test('simple obj to text', t => {
-  const mdb = new datapages.DB({localMode: true})
-  const odb = new datapages.DB({localMode: true})
+  const mdb = new datapages.InMem({localMode: true})
+  const odb = new datapages.InMem({localMode: true})
   odb.on('appear', page => {
     debug('odb appear', page)
   })
@@ -24,7 +24,7 @@ test('simple obj to text', t => {
   const trans = new ds.Translator(schema)
   trans.bridge(mdb, odb)
   debug('*********************** Adding')
-  odb.add({x: 1, y: 2})
+  odb.create({x: 1, y: 2})
   debug('*********************** Done Adding')
   for (let m of mdb.items()) {
     t.equal(m.text, 'testing 1 and 2')
@@ -33,9 +33,9 @@ test('simple obj to text', t => {
 })
 
 test('obj to text to obj', t => {
-  const mdb = new datapages.DB({localMode: true})
-  const odb1 = new datapages.DB({localMode: true})
-  const odb2 = new datapages.DB({localMode: true})
+  const mdb = new datapages.InMem({localMode: true})
+  const odb1 = new datapages.InMem({localMode: true})
+  const odb2 = new datapages.InMem({localMode: true})
 
   const schema1 = {
     a: {
@@ -57,7 +57,7 @@ test('obj to text to obj', t => {
   const trans2 = new ds.Translator(schema2)
   trans1.bridge(mdb, odb1)
   trans2.bridge(mdb, odb2)
-  odb1.add({x: 1, y: 2})
+  odb1.create({x: 1, y: 2})
   for (let m of mdb.items()) {
     t.equal(m.text, 'testing 1 and 2')
   }
@@ -70,8 +70,8 @@ test('obj to text to obj', t => {
 })
 
 test('shredding; GRADUAL obj to text', t => {
-  const mdb = new datapages.DB({localMode: true})
-  const odb = new datapages.DB({localMode: true})
+  const mdb = new datapages.InMem({localMode: true})
+  const odb = new datapages.InMem({localMode: true})
   odb.on('appear', page => {
     debug('odb appear', page)
   })
@@ -89,7 +89,7 @@ test('shredding; GRADUAL obj to text', t => {
   trans.bridge(mdb, odb)
   debug('*********************** Adding')
   const obj = {}
-  odb.add(obj)
+  odb.create(obj)
   odb.overlay(obj, {x: 1})
   debug('*********************** setting y')
   odb.overlay(obj, {y: 2})

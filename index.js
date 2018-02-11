@@ -17,6 +17,7 @@ class Translator {
   }
 
   stringify (obj) {
+    // console.log('2000 stringify %o SCHEMA %O', obj, this.schema)
     return serialize(obj, this.schema)
   }
 
@@ -26,7 +27,10 @@ class Translator {
   }
 
   bridge (messageDB, objectsDB) {
-    if (!this.schema) this.schema = objectsDB.views
+    if (!this.schema) {
+      this.schema = objectsDB.views
+      // console.log('Pulling schema from objectsDB: %P', this.schema)
+    }
     return new Bridge(this, messageDB, objectsDB)
   }
 }
